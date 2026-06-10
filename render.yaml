@@ -1,0 +1,31 @@
+# Render Blueprint — deploys the Coursebook API.
+# In Render: New + > Blueprint, point it at your GitHub repo, and it reads this file.
+services:
+  - type: web
+    name: coursebook-api
+    runtime: node
+    plan: free                 # free spins down after ~15 min idle (cold starts)
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: JWT_SECRET
+        generateValue: true    # Render generates a strong secret for you
+      - key: ALLOWED_ORIGIN
+        sync: false            # set this to your GitHub Pages URL after step 3
+      - key: DB_FILE
+        value: ./data.db
+
+    # ---- PERSISTENT DATA (recommended) ----
+    # The free plan has an EPHEMERAL filesystem: data.db is wiped on every
+    # redeploy/restart. To keep data, switch to a paid plan and add a disk:
+    #
+    # plan: starter
+    # disk:
+    #   name: coursebook-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # then change DB_FILE above to: /var/data/data.db
