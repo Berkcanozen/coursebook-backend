@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Coursebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root{
+    --bg:#F7F1E8; --surface:#FFFFFF; --surface-2:#FBF6EE;
+    --ink:#2B2520; --muted:#8C8377; --faint:#B5ABA0;
+    --line:rgba(43,37,32,.10); --line-2:rgba(43,37,32,.18);
+    --accent:#C85A38; --accent-soft:#F7E4DA; --accent-ink:#8A3A22;
+    --green:#3C7A57; --green-soft:#E3EFE6; --green-ink:#2A5840;
+    --amber:#A9761B; --amber-soft:#F6EAD3; --amber-ink:#7A5410;
+    --red:#BB4630; --red-soft:#F6E0DA; --red-ink:#85311F;
+    --radius:14px; --radius-sm:10px; --radius-lg:20px;
+    --sans:'Manrope',system-ui,sans-serif; --display:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;}
+  .app{width:100%;max-width:460px;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 60px rgba(43,37,32,.06);}
+  .syncbar{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);background-size:200% 100%;opacity:0;transition:opacity .2s;z-index:60;}
+  .syncbar.on{opacity:1;animation:slide 1s linear infinite;}
+  @keyframes slide{from{background-position:200% 0}to{background-position:-200% 0}}
+  header.bar{flex:0 0 auto;padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  header.bar .kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  header.bar h1{font-family:var(--display);font-weight:500;font-size:24px;margin:1px 0 0;letter-spacing:-.01em;line-height:1.1;}
+  .iconbtn{width:40px;height:40px;border-radius:50%;background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;border:1px solid var(--line);transition:.15s;}
+  .iconbtn:active{transform:scale(.94);}
+  .iconbtn.ghost{background:transparent;border-color:transparent;}
+  main{flex:1 1 auto;overflow-y:auto;padding:6px 20px 110px;-webkit-overflow-scrolling:touch;}
+  nav.tabs{position:absolute;left:0;right:0;bottom:0;display:flex;background:rgba(247,241,232,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));}
+  nav.tabs button{flex:1;background:none;border:none;cursor:pointer;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-family:var(--sans);}
+  nav.tabs button .i{font-size:23px;line-height:1;}
+  nav.tabs button span{font-size:11px;font-weight:600;}
+  nav.tabs button.on{color:var(--accent);}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:6px 0 12px;scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;border:1px solid var(--line-2);background:var(--surface);color:var(--muted);border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap;transition:.15s;}
+  .chip .dot{width:9px;height:9px;border-radius:50%;}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .chip.add{color:var(--accent);border-style:dashed;border-color:var(--accent);}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 22px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;}
+  .stat .lbl{font-size:12px;color:var(--muted);font-weight:600;}
+  .stat .val{font-family:var(--display);font-size:30px;font-weight:500;margin-top:4px;letter-spacing:-.02em;}
+  .stat.due .val{color:var(--accent);}
+  .stat.paid .val{color:var(--green);}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;margin:6px 2px 12px;}
+  .sechead h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0;}
+  .sechead .link{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer;background:none;border:none;font-family:var(--sans);}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:11px;cursor:pointer;transition:.15s;display:flex;gap:13px;align-items:center;}
+  .card:active{transform:scale(.99);background:var(--surface-2);}
+  .thumb{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+  .card .body{flex:1;min-width:0;}
+  .card .body .nm{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card .body .sub{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;}
+  .card .right{flex:0 0 auto;text-align:right;}
+  .card .right .amt{font-family:var(--display);font-weight:500;font-size:17px;}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:5px;}
+  .pill.paid{background:var(--green-soft);color:var(--green-ink);}
+  .pill.due{background:var(--amber-soft);color:var(--amber-ink);}
+  .pill.over{background:var(--red-soft);color:var(--red-ink);}
+  .pill.none{background:var(--surface-2);color:var(--faint);}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty .big{font-size:42px;}
+  .empty h3{font-family:var(--display);font-weight:500;color:var(--ink);font-size:20px;margin:14px 0 6px;}
+  .empty p{font-size:14px;margin:0 0 18px;}
+  .btn{border:none;border-radius:12px;padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s;width:100%;}
+  .btn:active{transform:scale(.985);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.soft{background:var(--surface);color:var(--ink);border:1px solid var(--line-2);}
+  .btn.danger{background:transparent;color:var(--red);border:1px solid var(--red-soft);}
+  .btn.sm{width:auto;padding:9px 14px;font-size:13px;border-radius:10px;}
+  .ch-head{display:flex;gap:13px;align-items:center;margin:6px 0 16px;}
+  .ch-head .thumb{width:50px;height:50px;font-size:26px;}
+  .ch-head .nm{font-family:var(--display);font-weight:500;font-size:23px;letter-spacing:-.01em;}
+  .ch-head .ft{font-size:13px;color:var(--muted);}
+  .hero{border-radius:var(--radius);padding:16px 18px;margin-bottom:18px;background:var(--accent-soft);}
+  .hero .lbl{font-size:12px;font-weight:600;color:var(--accent-ink);}
+  .hero .row{display:flex;align-items:baseline;justify-content:space-between;margin-top:5px;}
+  .hero .row .d{font-size:14px;color:var(--accent-ink);font-weight:500;}
+  .hero .row .a{font-family:var(--display);font-size:32px;font-weight:600;color:var(--accent-ink);letter-spacing:-.02em;}
+  .meta{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:2px 16px;margin-bottom:18px;}
+  .meta .r{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .meta .r:last-child{border-bottom:none;}
+  .meta .r .i{font-size:18px;color:var(--faint);width:22px;text-align:center;}
+  .meta .r .k{font-size:13px;color:var(--muted);flex:1;}
+  .meta .r .v{font-size:13.5px;font-weight:600;text-align:right;}
+  .ses{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-bottom:1px solid var(--line);}
+  .ses:last-child{border-bottom:none;}
+  .ses .dt{font-size:14px;}
+  .ses .dt small{display:block;color:var(--faint);font-size:11.5px;}
+  .ses .rt{display:flex;align-items:center;gap:10px;}
+  .ses .rt .amt{font-weight:600;font-size:14px;}
+  .togp{border:none;background:none;cursor:pointer;padding:0;}
+  .scrim{position:fixed;inset:0;background:rgba(30,25,20,.42);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .scrim.show{display:flex;animation:fade .2s;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{width:100%;max-width:460px;background:var(--bg);border-radius:24px 24px 0 0;padding:8px 22px calc(26px + env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto;animation:up .26s cubic-bezier(.2,.8,.2,1);}
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .grab{width:40px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 14px;}
+  .sheet h2{font-family:var(--display);font-weight:500;font-size:22px;margin:0 0 18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  .field input,.field select{width:100%;border:1px solid var(--line-2);background:var(--surface);border-radius:11px;padding:12px 13px;font-size:15px;font-family:var(--sans);color:var(--ink);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .seg{display:flex;gap:8px;}
+  .seg .o{flex:1;text-align:center;border:1px solid var(--line-2);background:var(--surface);border-radius:11px;padding:11px 6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .seg .o.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .toggle{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line-2);border-radius:11px;padding:12px 14px;cursor:pointer;}
+  .toggle .sw{width:48px;height:28px;border-radius:99px;background:var(--line-2);position:relative;transition:.2s;flex:0 0 auto;}
+  .toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;}
+  .toggle.on .sw{background:var(--green);}
+  .toggle.on .sw::after{left:23px;}
+  .sheet .actions{display:flex;gap:10px;margin-top:8px;}
+  .colorpick{display:flex;gap:10px;flex-wrap:wrap;}
+  .colorpick .c{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;}
+  .colorpick .c.on{border-color:var(--ink);}
+  .pay-group .gh{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 8px;}
+  .pay-group .gh .t{font-family:var(--display);font-size:16px;font-weight:500;}
+  .pay-group .gh .s{font-size:12px;color:var(--muted);font-weight:600;}
+  .filterbar{display:flex;gap:8px;margin:4px 0 14px;}
+  .filterbar .f{flex:1;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .filterbar .f.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .fam-row{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px;margin-bottom:10px;cursor:pointer;}
+  .fam-row .av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;font-family:var(--display);}
+  .fam-row .nm{font-weight:600;flex:1;}
+  .fam-row .ct{font-size:12px;color:var(--muted);}
+  /* auth */
+  .auth{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 26px 60px;}
+  .auth .logo{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:-.02em;}
+  .auth .tag{color:var(--muted);font-size:14px;margin:4px 0 26px;}
+  .auth .switch{text-align:center;margin-top:16px;font-size:14px;color:var(--muted);}
+  .auth .switch b{color:var(--accent);cursor:pointer;}
+  .auth .err{background:var(--red-soft);color:var(--red-ink);border-radius:11px;padding:11px 13px;font-size:13px;font-weight:600;margin-bottom:14px;display:none;}
+  .auth .err.show{display:block;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="syncbar" id="sync"></div>
+  <header class="bar" id="hdr"></header>
+  <main id="main"></main>
+  <nav class="tabs" id="tabs"></nav>
+</div>
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+
+<script>
+"use strict";
+
+/* ============ API client / data layer ============ */
+const API_BASE = (window.COURSEBOOK_API || "http://localhost:4000") + "/api";
+async function req(method, path, body){
+  let res;
+  try{
+    res = await fetch(API_BASE + path, {
+      method,
+      headers:{ "Content-Type":"application/json", ...(S.token?{Authorization:"Bearer "+S.token}:{}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }catch(e){ throw new Error("Cannot reach the server. Is the backend running on "+API_BASE.replace("/api","")+"?"); }
+  if(res.status===401 && S.token){ doLogout(); throw new Error("Your session has expired — please sign in again."); }
+  if(res.status===204) return null;
+  let data={}; try{ data=await res.json(); }catch(e){}
+  if(!res.ok) throw new Error(data.error || ("Request failed ("+res.status+")"));
+  return data;
+}
+const api={
+  register:(email,password,familyName,currency)=>req("POST","/auth/register",{email,password,familyName,currency}),
+  login:(email,password)=>req("POST","/auth/login",{email,password}),
+  getState:()=>req("GET","/me/state"),
+  updateFamily:(familyName,currency)=>req("PATCH","/me",{familyName,currency}),
+  addChild:(name,color)=>req("POST","/children",{name,color}),
+  updateChild:(id,p)=>req("PATCH","/children/"+id,p),
+  deleteChild:(id)=>req("DELETE","/children/"+id),
+  addCourse:(childId,d)=>req("POST","/courses",{childId,...d}),
+  updateCourse:(id,p)=>req("PATCH","/courses/"+id,p),
+  deleteCourse:(id)=>req("DELETE","/courses/"+id),
+  addSession:(courseId,d)=>req("POST","/courses/"+courseId+"/sessions",d),
+  updateSession:(id,p)=>req("PATCH","/sessions/"+id,p),
+  deleteSession:(id)=>req("DELETE","/sessions/"+id),
+};
+
+/* ============ constants ============ */
+const ICONS={music:"🎹",sport:"🏊",language:"🗣️",art:"🎨",dance:"🩰",code:"💻",science:"🔬",math:"➗",chess:"♟️",book:"📖",other:"📚"};
+const ICON_TINT={music:"#EFE6FA",sport:"#E1F1EC",language:"#F6E7DD",art:"#F8E6EC",dance:"#F9E6F1",code:"#E6EEF8",science:"#E9F2DC",math:"#F7EED7",chess:"#ECEAE3",book:"#E6F1FB",other:"#EFEAE2"};
+const CHILD_COLORS=["#C85A38","#3C7A57","#3E6FA0","#9A5BA6","#B5781E","#5B8FA0","#B0476A","#6B7A3C"];
+const FEELABEL={session:"per session",month:"per month",term:"per term"};
+const PILL={paid:["paid","Paid"],due:["due","Unpaid"],over:["over","Overdue"],none:["none","No sessions"]};
+
+/* ============ state ============ */
+let S={ token:null, family:"", currency:"€", children:[], activeChild:null, activeCourse:null, view:"home", payFilter:"all", authMode:"login", authErr:"" };
+
+/* ============ helpers ============ */
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=n=>S.currency+Number(n||0).toLocaleString("en-IE",{minimumFractionDigits:0,maximumFractionDigits:2});
+const todayISO=()=>new Date().toISOString().slice(0,10);
+function fmtDate(iso){ if(!iso)return""; return new Date(iso+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
+function fmtMonth(iso){ return new Date(iso+"T00:00:00").toLocaleDateString("en-GB",{month:"long",year:"numeric"}); }
+function isoBack(days){ const d=new Date(); d.setDate(d.getDate()-days); return d.toISOString().slice(0,10); }
+const child=()=>S.children.find(c=>c.id===S.activeChild)||null;
+const course=()=>{ const c=child(); return c?c.courses.find(x=>x.id===S.activeCourse):null; };
+function latestSession(co){ if(!co.sessions.length)return null; return [...co.sessions].sort((a,b)=>b.date.localeCompare(a.date))[0]; }
+function courseStatus(co){ const ls=latestSession(co); if(!ls)return"none"; if(ls.paid)return"paid"; return ls.date<todayISO()?"over":"due"; }
+function outstanding(){ let t=0; S.children.forEach(c=>c.courses.forEach(co=>co.sessions.forEach(s=>{if(!s.paid)t+=Number(s.amount)||0;}))); return t; }
+function paidThisYear(){ const y=new Date().getFullYear()+""; let t=0; S.children.forEach(c=>c.courses.forEach(co=>co.sessions.forEach(s=>{if(s.paid&&String(s.date).slice(0,4)===y)t+=Number(s.amount)||0;}))); return t; }
+
+/* ============ token + hydrate ============ */
+function saveToken(t){ S.token=t; try{localStorage.setItem("coursebook_token",t);}catch(e){} }
+function doLogout(){ S.token=null; try{localStorage.removeItem("coursebook_token");}catch(e){} S.children=[]; S.family=""; S.view="home"; S.activeChild=null; S.activeCourse=null; closeSheet(); render(); }
+async function hydrate(){
+  const st=await api.getState();
+  S.family=st.family||""; S.currency=st.currency||"€"; S.children=st.children||[];
+  if(!S.children.find(c=>c.id===S.activeChild)) S.activeChild=S.children[0]?.id||null;
+  if(S.view==="course" && !course()){ S.view="home"; S.activeCourse=null; }
+}
+function setSync(b){ document.getElementById("sync").classList.toggle("on",b); }
+async function run(fn){
+  setSync(true);
+  try{ await fn(); closeSheet(); render(); }
+  catch(e){ alert(e.message||"Something went wrong."); }
+  finally{ setSync(false); }
+}
+
+/* ============ mutations ============ */
+async function doAddChild(name,color){ const c=await api.addChild(name,color); await hydrate(); S.activeChild=c.id; S.view="home"; }
+async function doUpdateChild(id,p){ await api.updateChild(id,p); await hydrate(); }
+async function doDeleteChild(id){ await api.deleteChild(id); await hydrate(); if(!child()) S.activeChild=S.children[0]?.id||null; S.view="family"; }
+async function doAddCourse(childId,d){ const co=await api.addCourse(childId,d); await hydrate(); S.activeCourse=co.id; S.view="course"; }
+async function doUpdateCourse(id,p){ await api.updateCourse(id,p); await hydrate(); S.view="course"; }
+async function doDeleteCourse(id){ await api.deleteCourse(id); await hydrate(); S.activeCourse=null; S.view="home"; }
+async function doAddSession(courseId,d){ await api.addSession(courseId,d); await hydrate(); S.view="course"; }
+async function doToggleSession(id,paid){ await api.updateSession(id,{paid}); await hydrate(); }
+async function doUpdateFamily(familyName,currency){ await api.updateFamily(familyName,currency); await hydrate(); }
+async function doLoadSample(){
+  const e=await api.addChild("Emma",CHILD_COLORS[0]);
+  const l=await api.addChild("Liam",CHILD_COLORS[1]);
+  const piano=await api.addCourse(e.id,{name:"Piano lessons",instructor:"Ms. Petrova",location:"Harmony Music School",schedule:"Mon & Wed · 16:00",fee:25,feeType:"session",icon:"music"});
+  await api.addSession(piano.id,{date:isoBack(4),amount:25,paid:true});
+  await api.addSession(piano.id,{date:isoBack(6),amount:25,paid:true});
+  await api.addSession(piano.id,{date:isoBack(11),amount:25,paid:false});
+  const swim=await api.addCourse(e.id,{name:"Swimming club",instructor:"Coach Daniel",location:"Aqua Centre",schedule:"Sat · 10:30",fee:60,feeType:"month",icon:"sport"});
+  await api.addSession(swim.id,{date:isoBack(2),amount:60,paid:false,note:"June"});
+  const fr=await api.addCourse(e.id,{name:"French tutoring",instructor:"Mme Laurent",location:"Online",schedule:"Thu · 17:30",fee:30,feeType:"session",icon:"language"});
+  await api.addSession(fr.id,{date:isoBack(3),amount:30,paid:true});
+  const foot=await api.addCourse(l.id,{name:"Football academy",instructor:"Coach Rui",location:"Greenfield Pitch",schedule:"Tue & Fri · 18:00",fee:45,feeType:"month",icon:"sport"});
+  await api.addSession(foot.id,{date:isoBack(5),amount:45,paid:true,note:"June"});
+  const code=await api.addCourse(l.id,{name:"Coding club",instructor:"Mr. Tan",location:"STEM Lab",schedule:"Wed · 15:00",fee:20,feeType:"session",icon:"code"});
+  await api.addSession(code.id,{date:isoBack(1),amount:20,paid:false});
+  await api.addSession(code.id,{date:isoBack(8),amount:20,paid:true});
+  await hydrate(); S.activeChild=e.id; S.view="home";
+}
+
+/* ============ render ============ */
+function render(){
+  const hdr=document.getElementById("hdr"), tabs=document.getElementById("tabs"), m=document.getElementById("main");
+  if(!S.token){ hdr.innerHTML=""; tabs.innerHTML=""; m.innerHTML=authView(); m.scrollTop=0; return; }
+  renderHeader(hdr); renderTabs(tabs);
+  if(S.view==="home") m.innerHTML=homeView();
+  else if(S.view==="payments") m.innerHTML=paymentsView();
+  else if(S.view==="family") m.innerHTML=familyView();
+  else if(S.view==="course") m.innerHTML=courseView();
+  m.scrollTop=0;
+}
+function renderHeader(h){
+  if(S.view==="course"){
+    h.innerHTML=`<button class="iconbtn ghost" data-act="back" aria-label="Back">‹</button>
+      <div style="flex:1;text-align:center"><div class="kicker">${esc(child()?child().name:"")}</div></div>
+      <button class="iconbtn" data-act="course:edit" aria-label="Edit">✎</button>`;
+    return;
+  }
+  const titles={home:["Hello",S.family||"Family"],payments:["Track","Payments"],family:["Manage","Family"]};
+  const [k,t]=titles[S.view]||titles.home;
+  h.innerHTML=`<div><div class="kicker">${esc(k)}</div><h1>${esc(t)}</h1></div>
+    ${S.view==="home"&&child()?`<button class="iconbtn" data-act="course:add" aria-label="Add course">＋</button>`:""}
+    ${S.view==="family"?`<button class="iconbtn" data-act="family:settings" aria-label="Settings">⚙</button>`:""}`;
+}
+function renderTabs(el){
+  const v=S.view==="course"?"home":S.view;
+  el.innerHTML=[["home","⌂","Home"],["payments","💳","Payments"],["family","👪","Family"]]
+    .map(([id,i,l])=>`<button class="${v===id?"on":""}" data-act="nav" data-v="${id}"><span class="i">${i}</span><span>${l}</span></button>`).join("");
+}
+
+function authView(){
+  const reg=S.authMode==="register";
+  return `<div class="auth">
+    <div class="logo">Coursebook</div>
+    <div class="tag">Your children's classes &amp; payments, in one calm place.</div>
+    <div class="err ${S.authErr?"show":""}">${esc(S.authErr)}</div>
+    ${reg?`<div class="field"><label>Family name</label><input id="a-fam" placeholder="e.g. The Bakers" autocomplete="off"></div>`:""}
+    <div class="field"><label>Email</label><input id="a-email" type="email" placeholder="you@example.com" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="a-pass" type="password" placeholder="${reg?"At least 6 characters":"••••••••"}" autocomplete="${reg?"new-password":"current-password"}"></div>
+    ${reg?`<div class="row2">
+      <div class="field"><label>Currency</label><input id="a-cur" value="€" maxlength="3"></div>
+      <div class="field"><label>First child (optional)</label><input id="a-child" placeholder="e.g. Emma" autocomplete="off"></div>
+    </div>`:""}
+    <button class="btn primary" data-act="auth:submit">${reg?"Create account":"Sign in"}</button>
+    <div class="switch">${reg?"Already have an account?":"New here?"} <b data-act="auth:toggle">${reg?"Sign in":"Create one"}</b></div>
+  </div>`;
+}
+
+function homeView(){
+  const chips=S.children.map(c=>`<button class="chip ${c.id===S.activeChild?"on":""}" data-act="child:select" data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join("")
+    +`<button class="chip add" data-act="child:add">＋ Child</button>`;
+  const c=child();
+  let list="";
+  if(!c){ list=`<div class="empty"><div class="big">👋</div><h3>Welcome${S.family?", "+esc(S.family):""}</h3><p>Add your first child, or load sample data to explore.</p><button class="btn primary sm" data-act="child:add">＋ Add child</button><div style="height:8px"></div><button class="btn soft sm" data-act="sample:load">Load sample data</button></div>`; }
+  else if(!c.courses.length){ list=`<div class="empty"><div class="big">🎒</div><h3>No courses yet</h3><p>Add ${esc(c.name)}'s first class.</p><button class="btn primary sm" data-act="course:add">＋ Add course</button></div>`; }
+  else{
+    list=c.courses.map(co=>{
+      const st=courseStatus(co), ls=latestSession(co), tint=ICON_TINT[co.icon]||ICON_TINT.other;
+      return `<div class="card" data-act="course:open" data-id="${co.id}">
+        <div class="thumb" style="background:${tint}">${ICONS[co.icon]||ICONS.other}</div>
+        <div class="body"><div class="nm">${esc(co.name)}</div><div class="sub">🕑 ${esc(co.schedule||FEELABEL[co.feeType])}</div></div>
+        <div class="right"><div class="amt">${ls?money(ls.amount):money(co.fee)}</div><span class="pill ${PILL[st][0]}">${PILL[st][1]}</span></div></div>`;
+    }).join("");
+  }
+  return `<div class="chips">${chips}</div>
+    <div class="summary">
+      <div class="stat due"><div class="lbl">Outstanding</div><div class="val">${money(outstanding())}</div></div>
+      <div class="stat paid"><div class="lbl">Paid in ${new Date().getFullYear()}</div><div class="val">${money(paidThisYear())}</div></div>
+    </div>
+    <div class="sechead"><h2>${c?esc(c.name)+"'s courses":"Courses"}</h2>${c&&c.courses.length?`<button class="link" data-act="course:add">＋ Add</button>`:""}</div>
+    ${list}`;
+}
+
+function courseView(){
+  const co=course(); if(!co){ S.view="home"; return homeView(); }
+  const ls=latestSession(co), tint=ICON_TINT[co.icon]||ICON_TINT.other;
+  const sessions=[...co.sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  const sesHtml=sessions.length?sessions.map(s=>{
+    const over=!s.paid&&s.date<todayISO();
+    return `<div class="ses"><div class="dt">${fmtDate(s.date)}${s.note?`<small>${esc(s.note)}</small>`:""}</div>
+      <div class="rt"><span class="amt">${money(s.amount)}</span>
+        <button class="togp" data-act="session:toggle" data-id="${s.id}" data-paid="${s.paid?1:0}">
+          <span class="pill ${s.paid?"paid":over?"over":"due"}">${s.paid?"Paid":over?"Overdue":"Unpaid"}</span></button></div></div>`;
+  }).join(""):`<div class="empty" style="padding:24px"><p>No sessions logged yet.</p></div>`;
+  return `<div class="ch-head"><div class="thumb" style="background:${tint}">${ICONS[co.icon]||ICONS.other}</div>
+      <div><div class="nm">${esc(co.name)}</div><div class="ft">${FEELABEL[co.feeType]} · ${money(co.fee)}</div></div></div>
+    <div class="hero"><div class="lbl">Last attended session</div>
+      <div class="row"><span class="d">${ls?fmtDate(ls.date):"—"}</span><span class="a">${ls?money(ls.amount):money(0)}</span></div></div>
+    <div class="meta">
+      <div class="r"><span class="i">👤</span><span class="k">Instructor</span><span class="v">${esc(co.instructor||"—")}</span></div>
+      <div class="r"><span class="i">📍</span><span class="k">Location</span><span class="v">${esc(co.location||"—")}</span></div>
+      <div class="r"><span class="i">🔁</span><span class="k">Schedule</span><span class="v">${esc(co.schedule||"—")}</span></div>
+      <div class="r"><span class="i">💶</span><span class="k">Fee</span><span class="v">${money(co.fee)} / ${co.feeType}</span></div>
+    </div>
+    <div class="sechead"><h2>Recent sessions</h2><button class="link" data-act="session:add">＋ Log session</button></div>
+    ${sesHtml}
+    <button class="btn danger" style="margin-top:22px" data-act="course:delete">Delete this course</button>`;
+}
+
+function paymentsView(){
+  let all=[]; S.children.forEach(c=>c.courses.forEach(co=>co.sessions.forEach(s=>all.push({...s,courseName:co.name,childName:c.name}))));
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+  const f=S.payFilter, filtered=all.filter(s=>f==="all"?true:f==="unpaid"?!s.paid:s.paid);
+  const tot=filtered.reduce((t,s)=>t+(Number(s.amount)||0),0);
+  let body="";
+  if(!filtered.length){ body=`<div class="empty" style="padding:30px"><p>Nothing here yet.</p></div>`; }
+  else{
+    const groups={}; filtered.forEach(s=>{const k=s.date.slice(0,7);(groups[k]=groups[k]||[]).push(s);});
+    body=Object.keys(groups).sort().reverse().map(k=>{
+      const items=groups[k], gt=items.reduce((t,s)=>t+(Number(s.amount)||0),0);
+      return `<div class="pay-group"><div class="gh"><span class="t">${fmtMonth(k+"-01")}</span><span class="s">${money(gt)}</span></div>
+        ${items.map(s=>{const over=!s.paid&&s.date<todayISO();return `<div class="ses"><div class="dt">${esc(s.courseName)} <small>${esc(s.childName)} · ${fmtDate(s.date)}</small></div>
+          <div class="rt"><span class="amt">${money(s.amount)}</span><span class="pill ${s.paid?"paid":over?"over":"due"}">${s.paid?"Paid":over?"Overdue":"Unpaid"}</span></div></div>`;}).join("")}</div>`;
+    }).join("");
+  }
+  return `<div class="summary" style="margin-top:8px">
+      <div class="stat due"><div class="lbl">Outstanding</div><div class="val">${money(outstanding())}</div></div>
+      <div class="stat paid"><div class="lbl">Paid in ${new Date().getFullYear()}</div><div class="val">${money(paidThisYear())}</div></div></div>
+    <div class="filterbar">${["all","unpaid","paid"].map(x=>`<button class="f ${f===x?"on":""}" data-act="payfilter" data-v="${x}">${x[0].toUpperCase()+x.slice(1)}</button>`).join("")}</div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:0 2px 4px">${filtered.length} ${f==="all"?"sessions":f} · ${money(tot)}</div>
+    ${body}`;
+}
+
+function familyView(){
+  const rows=S.children.map(c=>{
+    const nc=c.courses.length, out=c.courses.reduce((t,co)=>t+co.sessions.reduce((a,s)=>a+(s.paid?0:Number(s.amount)||0),0),0);
+    return `<div class="fam-row" data-act="child:edit" data-id="${c.id}"><div class="av" style="background:${c.color}">${esc(c.name.slice(0,1).toUpperCase())}</div>
+      <div class="nm">${esc(c.name)}<div class="ct">${nc} course${nc!==1?"s":""}${out?` · ${money(out)} due`:""}</div></div>
+      <span style="color:var(--faint);font-size:18px">✎</span></div>`;
+  }).join("");
+  return `<div style="margin:4px 0 16px">${rows||`<div class="empty"><p>No children yet.</p></div>`}</div>
+    <button class="btn soft" data-act="child:add">＋ Add a child</button>
+    <div style="margin-top:28px;font-size:12px;color:var(--muted);font-weight:600;padding:0 2px 8px">ACCOUNT</div>
+    <div class="meta">
+      <div class="r" data-act="family:settings" style="cursor:pointer"><span class="i">🏷️</span><span class="k">Family name</span><span class="v">${esc(S.family||"—")}</span></div>
+      <div class="r" data-act="family:settings" style="cursor:pointer"><span class="i">💱</span><span class="k">Currency</span><span class="v">${esc(S.currency)}</span></div>
+    </div>
+    <button class="btn danger" style="margin-top:16px" data-act="logout">Sign out</button>`;
+}
+
+/* ============ sheets ============ */
+let sheetSave=null;
+function openSheet(html,onSave){ sheetSave=onSave||null; document.getElementById("sheet").innerHTML=`<div class="grab"></div>`+html; document.getElementById("scrim").classList.add("show"); }
+function closeSheet(){ document.getElementById("scrim").classList.remove("show"); sheetSave=null; }
+
+function childSheet(existing){
+  const e=existing||{name:"",color:CHILD_COLORS[S.children.length%CHILD_COLORS.length]};
+  openSheet(`<h2>${existing?"Edit child":"Add a child"}</h2>
+    <div class="field"><label>Name</label><input id="f-name" value="${esc(e.name)}" placeholder="e.g. Emma" autocomplete="off"></div>
+    <div class="field"><label>Colour</label><div class="colorpick" id="f-color">${CHILD_COLORS.map(c=>`<div class="c ${c===e.color?"on":""}" data-c="${c}" style="background:${c}"></div>`).join("")}</div></div>
+    <div class="actions">${existing?`<button class="btn danger" data-act="child:delete" data-id="${existing.id}">Delete</button>`:""}<button class="btn primary" data-act="sheet:save">Save</button></div>`,
+    ()=>{ const name=document.getElementById("f-name").value.trim(); if(!name)return alert("Please enter a name.");
+      const color=document.querySelector("#f-color .c.on")?.dataset.c||e.color;
+      if(existing) run(()=>doUpdateChild(existing.id,{name,color})); else run(()=>doAddChild(name,color)); });
+  document.getElementById("f-color").addEventListener("click",ev=>{const t=ev.target.closest(".c");if(!t)return;document.querySelectorAll("#f-color .c").forEach(x=>x.classList.remove("on"));t.classList.add("on");});
+}
+
+let tmpFee="session",tmpIcon="music";
+function courseSheet(existing){
+  const e=existing||{name:"",instructor:"",location:"",schedule:"",fee:"",feeType:"session",icon:"music"};
+  tmpFee=e.feeType; tmpIcon=e.icon;
+  openSheet(`<h2>${existing?"Edit course":"Add a course"}</h2>
+    <div class="field"><label>Course name</label><input id="c-name" value="${esc(e.name)}" placeholder="e.g. Piano lessons" autocomplete="off"></div>
+    <div class="field"><label>Type</label><div class="seg" id="c-icon" style="flex-wrap:wrap">${Object.keys(ICONS).map(k=>`<div class="o ${k===tmpIcon?"on":""}" data-icon="${k}" style="font-size:18px;padding:8px 4px">${ICONS[k]}</div>`).join("")}</div></div>
+    <div class="field"><label>Instructor / provider</label><input id="c-inst" value="${esc(e.instructor)}" placeholder="e.g. Ms. Petrova" autocomplete="off"></div>
+    <div class="field"><label>Location</label><input id="c-loc" value="${esc(e.location)}" placeholder="e.g. Harmony Music School" autocomplete="off"></div>
+    <div class="field"><label>Schedule</label><input id="c-sched" value="${esc(e.schedule)}" placeholder="e.g. Mon & Wed · 16:00" autocomplete="off"></div>
+    <div class="row2">
+      <div class="field"><label>Fee amount (${esc(S.currency)})</label><input id="c-fee" type="number" inputmode="decimal" value="${e.fee}" placeholder="25"></div>
+      <div class="field"><label>Billed</label><div class="seg" id="c-feetype" style="flex-direction:column;gap:6px">${["session","month","term"].map(t=>`<div class="o ${t===tmpFee?"on":""}" data-fee="${t}">per ${t}</div>`).join("")}</div></div>
+    </div>
+    <div class="actions"><button class="btn primary" data-act="sheet:save">Save course</button></div>`,
+    ()=>{ const name=document.getElementById("c-name").value.trim(); if(!name)return alert("Please enter a course name.");
+      const d={name,instructor:document.getElementById("c-inst").value.trim(),location:document.getElementById("c-loc").value.trim(),
+        schedule:document.getElementById("c-sched").value.trim(),fee:parseFloat(document.getElementById("c-fee").value)||0,feeType:tmpFee,icon:tmpIcon};
+      if(existing) run(()=>doUpdateCourse(existing.id,d)); else run(()=>doAddCourse(child().id,d)); });
+  document.getElementById("c-feetype").addEventListener("click",ev=>{const t=ev.target.closest(".o");if(!t)return;tmpFee=t.dataset.fee;document.querySelectorAll("#c-feetype .o").forEach(x=>x.classList.toggle("on",x===t));});
+  document.getElementById("c-icon").addEventListener("click",ev=>{const t=ev.target.closest(".o");if(!t)return;tmpIcon=t.dataset.icon;document.querySelectorAll("#c-icon .o").forEach(x=>x.classList.toggle("on",x===t));});
+}
+
+let tmpPaid=true;
+function sessionSheet(){
+  const co=course(); tmpPaid=true;
+  openSheet(`<h2>Log a session</h2>
+    <div class="row2"><div class="field"><label>Date</label><input id="s-date" type="date" value="${todayISO()}"></div>
+      <div class="field"><label>Amount (${esc(S.currency)})</label><input id="s-amt" type="number" inputmode="decimal" value="${co.fee||""}" placeholder="25"></div></div>
+    <div class="field"><label>Note (optional)</label><input id="s-note" placeholder="e.g. extra-long lesson" autocomplete="off"></div>
+    <div class="field"><div class="toggle on" id="s-paid"><div><div style="font-weight:600;font-size:14px">Paid</div><div style="font-size:12px;color:var(--muted)">Has this session been paid for?</div></div><div class="sw"></div></div></div>
+    <div class="actions"><button class="btn primary" data-act="sheet:save">Add session</button></div>`,
+    ()=>{ const date=document.getElementById("s-date").value||todayISO(); const amount=parseFloat(document.getElementById("s-amt").value)||0;
+      const note=document.getElementById("s-note").value.trim();
+      run(()=>doAddSession(co.id,{date,amount,paid:tmpPaid,note})); });
+  document.getElementById("s-paid").addEventListener("click",function(){tmpPaid=!tmpPaid;this.classList.toggle("on",tmpPaid);});
+}
+
+function settingsSheet(){
+  openSheet(`<h2>Family settings</h2>
+    <div class="field"><label>Family name</label><input id="set-fam" value="${esc(S.family)}" placeholder="e.g. The Bakers" autocomplete="off"></div>
+    <div class="field"><label>Currency symbol</label><input id="set-cur" value="${esc(S.currency)}" maxlength="3" style="width:90px"></div>
+    <div class="actions"><button class="btn primary" data-act="sheet:save">Save</button></div>`,
+    ()=>{ const fam=document.getElementById("set-fam").value.trim(); const cur=document.getElementById("set-cur").value.trim()||"€";
+      run(()=>doUpdateFamily(fam||S.family,cur)); });
+}
+
+/* ============ auth submit ============ */
+async function submitAuth(){
+  S.authErr="";
+  const reg=S.authMode==="register";
+  const email=(document.getElementById("a-email")?.value||"").trim();
+  const password=document.getElementById("a-pass")?.value||"";
+  if(!email||!password){ S.authErr="Please enter your email and password."; return render(); }
+  const btn=document.querySelector('[data-act="auth:submit"]'); if(btn){btn.disabled=true;btn.textContent="Please wait…";}
+  setSync(true);
+  try{
+    let res;
+    if(reg){
+      const fam=(document.getElementById("a-fam")?.value||"").trim();
+      const cur=(document.getElementById("a-cur")?.value||"€").trim()||"€";
+      const firstChild=(document.getElementById("a-child")?.value||"").trim();
+      if(!fam){ S.authErr="Please enter a family name."; setSync(false); return render(); }
+      res=await api.register(email,password,fam,cur);
+      saveToken(res.token);
+      if(firstChild){ await api.addChild(firstChild,CHILD_COLORS[0]); }
+    }else{
+      res=await api.login(email,password);
+      saveToken(res.token);
+    }
+    await hydrate(); S.view="home"; render();
+  }catch(e){ S.authErr=e.message||"Could not sign in."; render(); }
+  finally{ setSync(false); }
+}
+
+/* ============ event delegation ============ */
+document.addEventListener("click",e=>{
+  if(e.target.id==="scrim"){ closeSheet(); return; }
+  const el=e.target.closest("[data-act]"); if(!el)return;
+  const act=el.dataset.act, id=el.dataset.id, v=el.dataset.v;
+  switch(act){
+    case"auth:toggle": S.authMode=S.authMode==="login"?"register":"login"; S.authErr=""; render(); break;
+    case"auth:submit": submitAuth(); break;
+    case"logout": if(confirm("Sign out of Coursebook?")) doLogout(); break;
+    case"nav": S.view=v; S.activeCourse=null; render(); break;
+    case"back": S.view="home"; S.activeCourse=null; render(); break;
+    case"sample:load": run(doLoadSample); break;
+    case"child:select": S.activeChild=id; render(); break;
+    case"child:add": childSheet(null); break;
+    case"child:edit": childSheet(S.children.find(c=>c.id===id)); break;
+    case"child:delete": if(confirm("Delete this child and all their courses?")) run(()=>doDeleteChild(id)); break;
+    case"course:add": if(!child()) childSheet(null); else courseSheet(null); break;
+    case"course:open": S.activeCourse=id; S.view="course"; render(); break;
+    case"course:edit": courseSheet(course()); break;
+    case"course:delete": if(confirm("Delete this course?")) run(()=>doDeleteCourse(S.activeCourse)); break;
+    case"session:add": sessionSheet(); break;
+    case"session:toggle": run(()=>doToggleSession(id, el.dataset.paid!=="1")); break;
+    case"payfilter": S.payFilter=v; render(); break;
+    case"family:settings": settingsSheet(); break;
+    case"sheet:save": if(sheetSave) sheetSave(); break;
+  }
+});
+
+/* ============ boot ============ */
+(async function(){
+  try{ S.token=localStorage.getItem("coursebook_token"); }catch(e){}
+  if(S.token){ try{ await hydrate(); }catch(e){ S.token=null; } }
+  render();
+})();
+</script>
+</body>
+</html>
